@@ -1,1 +1,629 @@
-# transport-cash-calculator
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Transport Cash Calculator</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+padding:20px;
+}
+
+.container{
+
+max-width:600px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0px 0px 15px rgba(0,0,0,.15);
+
+}
+
+h1{
+
+text-align:center;
+margin-bottom:20px;
+color:#1e88e5;
+
+}
+
+.row{
+
+margin-bottom:18px;
+
+}
+
+label{
+
+display:block;
+font-weight:bold;
+margin-bottom:6px;
+
+}
+
+input{
+
+width:100%;
+padding:12px;
+font-size:16px;
+border:1px solid #ccc;
+border-radius:8px;
+
+}
+
+.readonly{
+
+background:#ececec;
+
+}
+
+.section{
+
+margin-top:25px;
+padding:15px;
+background:#fafafa;
+border-radius:10px;
+border:1px solid #ddd;
+
+}
+
+.section h2{
+
+font-size:18px;
+margin-bottom:15px;
+color:#444;
+
+}
+
+button{
+
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+background:#1e88e5;
+color:white;
+font-size:17px;
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#1565c0;
+
+}
+
+.smallButton{
+
+margin-top:10px;
+background:#43a047;
+
+}
+
+.smallButton:hover{
+
+background:#2e7d32;
+
+}
+
+.total{
+
+font-size:18px;
+font-weight:bold;
+margin-top:12px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🚚 Transport Cash Calculator</h1>
+
+<div class="row">
+
+<label>Date</label>
+
+<input
+type="date"
+id="date">
+
+</div>
+
+<div class="row">
+
+<label>Vehicle Number</label>
+
+<input
+type="text"
+id="vehicle"
+placeholder="Enter Vehicle Number">
+
+</div>
+
+<div class="row">
+
+<label>Driver Name</label>
+
+<input
+type="text"
+id="driver"
+placeholder="Enter Driver Name">
+
+</div>
+
+<div class="row">
+
+<label>Kilometer</label>
+
+<input
+type="number"
+id="kilometer"
+placeholder="Enter Kilometer">
+
+</div>
+
+<div class="row">
+
+<label>Net Cash</label>
+
+<input
+type="number"
+id="netCash"
+placeholder="Enter Net Cash">
+
+</div>
+
+<div class="row">
+
+<label>Cash Collected</label>
+
+<input
+type="number"
+id="cashCollected"
+placeholder="Enter Cash Collected">
+
+</div>
+
+<div class="section">
+
+<h2>⛽ Fuel Entries</h2>
+
+<div id="fuelContainer">
+
+</div>
+
+<button
+type="button"
+class="smallButton"
+id="addFuel">
+
++ Add Fuel Entry
+
+</button>
+
+<p class="total">
+
+Total Fuel :
+₹ <span id="fuelTotal">0</span>
+
+</p>
+
+</div>
+
+<div class="row">
+
+<label>Salary</label>
+
+<input
+type="number"
+id="salary"
+placeholder="Enter Salary">
+
+</div>
+
+<div class="section">
+
+<h2>🛣 Toll Entries</h2>
+
+<div id="tollContainer">
+
+</div>
+
+<button
+type="button"
+class="smallButton"
+id="addToll">
+
++ Add Toll Entry
+
+</button>
+
+<p class="total">
+
+Total Toll :
+₹ <span id="tollTotal">0</span>
+
+</p>
+
+</div>
+
+<div class="row">
+
+<label>Remaining</label>
+
+<input
+type="text"
+id="finalRemaining"
+class="readonly"
+readonly>
+
+</div>
+
+<button id="saveButton">
+
+💾 Save
+
+</button>
+
+</div>
+ <script>
+
+// ----------------------------
+// Default Date = Today (editable)
+// ----------------------------
+
+const today=new Date();
+document.getElementById("date").value=today.toISOString().split("T")[0];
+
+// ----------------------------
+// Fuel & Toll Entry Section
+// ----------------------------
+
+const fuelContainer = document.getElementById("fuelContainer");
+const tollContainer = document.getElementById("tollContainer");
+
+// Main fields (declared early so calculateAll can use them
+// as soon as the first fuel/toll entry is created below)
+const cashCollectedInput = document.getElementById("cashCollected");
+const salaryInput = document.getElementById("salary");
+
+let fuelCount = 0;
+let tollCount = 0;
+
+// First entry automatically create
+addFuelEntry();
+addTollEntry();
+
+document
+.getElementById("addFuel")
+.addEventListener("click", addFuelEntry);
+
+document
+.getElementById("addToll")
+.addEventListener("click", addTollEntry);
+
+
+// ----------------------------
+// ADD FUEL
+// ----------------------------
+
+function addFuelEntry(){
+
+fuelCount++;
+
+const div=document.createElement("div");
+
+div.style.display="flex";
+div.style.gap="10px";
+div.style.marginBottom="10px";
+
+div.innerHTML=`
+
+<input
+type="number"
+class="fuelInput"
+placeholder="Fuel ${fuelCount}"
+style="flex:1;padding:10px;">
+
+<button
+type="button"
+onclick="this.parentElement.remove();calculateAll();"
+style="
+width:45px;
+background:red;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+">
+
+❌
+
+</button>
+
+`;
+
+fuelContainer.appendChild(div);
+
+div
+.querySelector("input")
+.addEventListener("input",calculateAll);
+
+calculateAll();
+
+}
+
+
+
+// ----------------------------
+// ADD TOLL
+// ----------------------------
+
+function addTollEntry(){
+
+tollCount++;
+
+const div=document.createElement("div");
+
+div.style.display="flex";
+div.style.gap="10px";
+div.style.marginBottom="10px";
+
+div.innerHTML=`
+
+<input
+type="number"
+class="tollInput"
+placeholder="Toll ${tollCount}"
+style="flex:1;padding:10px;">
+
+<button
+type="button"
+onclick="this.parentElement.remove();calculateAll();"
+style="
+width:45px;
+background:red;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+">
+
+❌
+
+</button>
+
+`;
+
+tollContainer.appendChild(div);
+
+div
+.querySelector("input")
+.addEventListener("input",calculateAll);
+
+calculateAll();
+
+} // ----------------------------
+// CALCULATIONS
+// ----------------------------
+
+// Whenever Cash or Salary changes
+cashCollectedInput.addEventListener("input", calculateAll);
+salaryInput.addEventListener("input", calculateAll);
+
+function calculateAll() {
+
+    // Cash Collected
+    let cashCollected =
+        parseFloat(cashCollectedInput.value) || 0;
+
+    // -----------------------
+    // Total Fuel
+    // -----------------------
+
+    let fuelTotal = 0;
+
+    document
+        .querySelectorAll(".fuelInput")
+        .forEach(input => {
+
+            fuelTotal +=
+                parseFloat(input.value) || 0;
+
+        });
+
+    document.getElementById("fuelTotal").innerText =
+        fuelTotal;
+
+    // -----------------------
+    // Total Toll
+    // -----------------------
+
+    let tollTotal = 0;
+
+    document
+        .querySelectorAll(".tollInput")
+        .forEach(input => {
+
+            tollTotal +=
+                parseFloat(input.value) || 0;
+
+        });
+
+    document.getElementById("tollTotal").innerText =
+        tollTotal;
+
+    // -----------------------
+    // Salary
+    // -----------------------
+
+    let salary =
+        parseFloat(salaryInput.value) || 0;
+
+    // -----------------------
+    // Final Remaining
+    // (Cash Collected - Fuel - Salary + Toll)
+    // -----------------------
+
+    let finalRemaining =
+        cashCollected -
+        fuelTotal -
+        salary +
+        tollTotal;
+
+    document.getElementById("finalRemaining").value =
+        finalRemaining;
+
+} // ----------------------------
+// GOOGLE SHEET SAVE
+// ----------------------------
+
+const scriptURL = "https://script.google.com/macros/s/AKfycbz6jZXXtRWoIORFn7cOZMson8Ri_dVfoHc59FbvxG9hmbNQ3xBfV_zYPNj8qf3rQ6mz/exec";
+
+
+document
+.getElementById("saveButton")
+.addEventListener("click", saveData);
+
+
+
+function saveData(){
+
+    let fuelValues = [];
+
+    document
+    .querySelectorAll(".fuelInput")
+    .forEach(input => {
+
+        if(input.value){
+            fuelValues.push(input.value);
+        }
+
+    });
+
+
+
+    let tollValues = [];
+
+    document
+    .querySelectorAll(".tollInput")
+    .forEach(input => {
+
+        if(input.value){
+            tollValues.push(input.value);
+        }
+
+    });
+
+
+
+    const data = {
+
+        date:
+        document.getElementById("date").value,
+
+
+        vehicle:
+        document.getElementById("vehicle").value,
+
+
+        driver:
+        document.getElementById("driver").value,
+
+
+        kilometer:
+        document.getElementById("kilometer").value,
+
+
+        netCash:
+        document.getElementById("netCash").value,
+
+
+        cashCollected:
+        document.getElementById("cashCollected").value,
+
+
+        fuelDetails:
+        fuelValues.join(" | "),
+
+
+        totalFuel:
+        document.getElementById("fuelTotal").innerText,
+
+
+        tollDetails:
+        tollValues.join(" | "),
+
+
+        totalToll:
+        document.getElementById("tollTotal").innerText,
+
+
+        salary:
+        document.getElementById("salary").value,
+
+
+        finalRemaining:
+        document.getElementById("finalRemaining").value
+
+    };
+
+
+
+    fetch(scriptURL, {
+
+        method:"POST",
+
+        body:JSON.stringify(data)
+
+    })
+
+    .then(response=>response.json())
+
+    .then(result=>{
+
+
+        alert("✅ Data Saved Successfully");
+
+
+        console.log(result);
+
+
+    })
+
+    .catch(error=>{
+
+
+        alert("❌ Error Saving Data");
+
+
+        console.log(error);
+
+
+    });
+
+
+}
+
+</script> 
+
+</body>
+</html>
